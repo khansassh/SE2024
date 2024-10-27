@@ -1,5 +1,4 @@
 <?php
-// Connect to database
 $conn = new mysqli("localhost", "root", "", "salesorderdb");
 
 // Fetch products
@@ -7,35 +6,27 @@ $productQuery = "SELECT * FROM products";
 $productResult = $conn->query($productQuery);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get form data
     $order_number = $_POST['order_number'];
     $customer_ref = $_POST['customer_ref'];
     $order_date = $_POST['order_date'];
     $total = 0;
-    
-    // Insert order data
+
     $conn->query("INSERT INTO orders (order_number, customer_ref, order_date, total) VALUES ('$order_number', '$customer_ref', '$order_date', 0)");
     $order_id = $conn->insert_id;
-    
-    // Process each product entry
+
     foreach ($_POST['products'] as $product) {
         $product_id = $product['product_id'];
         $quantity = $product['quantity'];
         $discount = $product['discount'];
         
-        // Fetch product price
         $productData = $conn->query("SELECT price FROM products WHERE id='$product_id'")->fetch_assoc();
         $price = $productData['price'];
-        
-        // Calculate subtotal with discount
         $subtotal = $quantity * $price * ((100 - $discount) / 100);
         $total += $subtotal;
-        
-        // Insert order details
+
         $conn->query("INSERT INTO order_details (order_id, product_id, quantity, discount, subtotal) VALUES ('$order_id', '$product_id', '$quantity', '$discount', '$subtotal')");
     }
-    
-    // Update total in orders
+
     $conn->query("UPDATE orders SET total='$total' WHERE id='$order_id'");
     echo "<script>alert('Order successfully'); window.location.href = 'home.php';</script>";
 }
@@ -49,24 +40,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background: linear-gradient(135deg, #ffd1a9, #ff9190);
             padding: 20px;
         }
         form {
             background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             max-width: 600px;
             margin: auto;
         }
         h2 {
             text-align: center;
-            color: #333;
+            color: #ff4081;
+            font-size: 24px;
         }
         label {
             display: block;
-            margin: 10px 0 5px;
+            margin: 12px 0 5px;
             font-weight: bold;
         }
         input[type="text"], input[type="date"], select, input[type="number"] {
@@ -74,29 +66,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 10px;
             margin-bottom: 15px;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            border-radius: 6px;
         }
         input[type="submit"], button {
-            background-color: #5cb85c;
+            background-color: #ff6f61;
             color: white;
             padding: 10px 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 20px;
             cursor: pointer;
+            margin-top: 15px;
+            font-size: 16px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
         }
         input[type="submit"]:hover, button:hover {
-            background-color: #4cae4c;
+            background-color: #ff4081;
         }
         .product-row {
-            margin-bottom: 15px;
+            background-color: #ffe0cc;
             padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: #f9f9f9;
-        }
-        .product-row label {
-            display: inline-block;
-            margin: 5px 10px 5px 0;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -136,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>Product:
                     <select name="products[${productCount}][product_id]" required>
                         <?php 
-                        $productResult->data_seek(0); // Reset product result for reuse
+                        $productResult->data_seek(0); 
                         while ($row = $productResult->fetch_assoc()): ?>
                             <option value="<?= $row['id'] ?>"><?= $row['name'] ?> - <?= $row['price'] ?></option>
                         <?php endwhile; ?>
