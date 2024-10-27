@@ -1,8 +1,6 @@
 <?php
-// Database connection
 $conn = new mysqli("localhost", "root", "", "raw_material_work_order_db");
 
-// Retrieve work order details
 $work_orders = $conn->query("SELECT * FROM work_order");
 ?>
 
@@ -24,7 +22,6 @@ $work_orders = $conn->query("SELECT * FROM work_order");
             <p>Finish Date: <?= htmlspecialchars($work_order['finish_date']) ?></p>
 
             <?php
-            // Get materials for this work order
             $materials = $conn->query("SELECT m.material_name, wom.days, wom.percentage FROM work_order_material wom JOIN material m ON wom.material_id = m.id WHERE wom.work_order_id = " . $work_order['id']);
             $total_percentage = 0;
             ?>

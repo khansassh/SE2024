@@ -1,30 +1,28 @@
 <?php
-// Database connection
+
 $conn = new mysqli("localhost", "root", "", "raw_material_work_order_db");
 
-// Handling form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $work_order_no = $_POST['work_order_no'];
     $client = $_POST['client'];
     $work_date = $_POST['work_date'];
     $materials = $_POST['material'];
+    $percentages = $_POST['percentage']; 
     $total_days = 0;
 
-    // Insert the main work order details
     $conn->query("INSERT INTO work_order (work_order_no, client, work_date) VALUES ('$work_order_no', '$client', '$work_date')");
     $work_order_id = $conn->insert_id;
 
-    // Insert each material and calculate total days
-    foreach ($materials as $material_id) {
+    foreach ($materials as $index => $material_id) {
         $result = $conn->query("SELECT days FROM material WHERE id=$material_id");
         $material = $result->fetch_assoc();
         $days = $material['days'];
         $total_days += $days;
 
-        $conn->query("INSERT INTO work_order_material (work_order_id, material_id, days) VALUES ($work_order_id, $material_id, $days)");
+        $percentage = $percentages[$index]; 
+        $conn->query("INSERT INTO work_order_material (work_order_id, material_id, days, percentage) VALUES ($work_order_id, $material_id, $days, $percentage)");
     }
 
-    // Calculate finish date
     $finish_date = date('Y-m-d', strtotime("$work_date + $total_days days"));
     $conn->query("UPDATE work_order SET finish_date='$finish_date' WHERE id=$work_order_id");
 
@@ -32,8 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Get materials
-$materials = $conn->query("SELECT * FROM material");
+$materials_result = $conn->query("SELECT * FROM material");
+$materials_options = "";
+
+while ($row = $materials_result->fetch_assoc()) {
+    $materials_options .= '<option value="' . $row['id'] . '">' . htmlspecialchars($row['material_name']) . ' (' . $row['days'] . ' days)</option>';
+}
 ?>
 
 <!DOCTYPE html>
@@ -43,6 +45,28 @@ $materials = $conn->query("SELECT * FROM material");
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Work Order</title>
     <link rel="stylesheet" href="styles.css">
+    <script>
+        const materialsOptions = `<?= $materials_options ?>`; // Store material options in a variable
+
+        function addMaterial() {
+            const materialContainer = document.getElementById('material-container');
+            const newMaterial = document.createElement('div');
+            newMaterial.className = 'material-row';
+            newMaterial.innerHTML = `
+                <select name="material[]" required>
+                    ${materialsOptions} <!-- Use the variable here -->
+                </select>
+                <input type="number" name="percentage[]" min="0" max="100" step="1" required placeholder="Percentage">
+                <button type="button" onclick="removeMaterial(this)">Remove</button>
+            `;
+            materialContainer.appendChild(newMaterial);
+        }
+
+        function removeMaterial(button) {
+            const materialRow = button.parentElement;
+            materialRow.parentElement.removeChild(materialRow);
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -63,15 +87,17 @@ $materials = $conn->query("SELECT * FROM material");
                 <input type="date" id="work_date" name="work_date" required>
             </div>
 
-            <div class="form-group">
-                <label for="material">Material:</label>
-                <select id="material" name="material[]" multiple required>
-                    <?php while ($row = $materials->fetch_assoc()): ?>
-                        <option value="<?= $row['id'] ?>"><?= htmlspecialchars($row['material_name']) ?> (<?= $row['days'] ?> days)</option>
-                    <?php endwhile; ?>
-                </select>
+            <div id="material-container">
+                <div class="material-row">
+                    <label for="material">Material:</label>
+                    <select name="material[]" required>
+                        <?= $materials_options ?> 
+                    </select>
+                    <input type="number" name="percentage[]" min="0" max="100" step="1" required placeholder="Percentage">
+                </div>
             </div>
 
+            <button type="button" onclick="addMaterial()">Add Another Material</button>
             <input type="submit" value="Submit" class="btn">
         </form>
     </div>

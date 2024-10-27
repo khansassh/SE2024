@@ -1,8 +1,6 @@
 <?php
-// Database connection
 $conn = new mysqli("localhost", "root", "", "raw_material_work_order_db");
 
-// Retrieve materials
 $materials = $conn->query("SELECT * FROM material");
 ?>
 
