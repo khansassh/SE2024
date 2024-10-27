@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Material Work Order</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <form action="worker.php" method="POST" id="workOrderForm">
+            <h2>Work Order Details</h2>
+            
+            <label for="work_order_no">Work Order No:</label>
+            <input type="text" id="work_order_no" name="work_order_no" required>
+
+            <label for="client">Client:</label>
+            <input type="text" id="client" name="client" required>
+
+            <label for="work_date">Work Date:</label>
+            <input type="date" id="work_date" name="work_date" required onchange="updateFinishDate()">
+
+            <h2>Materials</h2>
+            <div id="materialSection">
+                <div class="material-item">
+                    <label for="material_1">Material 1:</label>
+                    <select name="material[]" required>
+                        <option value="1">Cable</option>
+                        <option value="2">Bolt</option>
+                        <option value="3">Cap</option>
+                    </select>
+                    <label for="days_1">Days:</label>
+                    <input type="number" name="days[]" value="5" min="0" required onchange="updateFinishDate()">
+                    <label for="percentage_1">Percentage:</label>
+                    <input type="number" name="percentage[]" min="0" max="100" required>
+                </div>
+            </div>
+            
+            <button type="button" onclick="addMaterial()">Add Material</button>
+
+            <h3 id="finishDateDisplay" style="margin-top: 20px;"></h3>
+            <button type="submit">Submit Work Order</button>
+        </form>
+    </div>
+
+    <script>
+        function addMaterial() {
+            const materialSection = document.getElementById('materialSection');
+            const index = materialSection.children.length + 1;
+
+            const newMaterial = `
+                <div class="material-item">
+                    <label for="material_${index}">Material ${index}:</label>
+                    <select name="material[]" required>
+                        <option value="1">Cable</option>
+                        <option value="2">Bolt</option>
+                        <option value="3">Cap</option>
+                    </select>
+                    <label for="days_${index}">Days:</label>
+                    <input type="number" name="days[]" value="5" min="0" required onchange="updateFinishDate()">
+                    <label for="percentage_${index}">Percentage:</label>
+                    <input type="number" name="percentage[]" min="0" max="100" required>
+                </div>
+            `;
+            materialSection.insertAdjacentHTML('beforeend', newMaterial);
+            updateFinishDate();
+        }
+
+        function updateFinishDate() {
+            const workDate = new Date(document.getElementById('work_date').value);
+            const daysInputs = document.querySelectorAll('input[name="days[]"]');
+            let totalDays = 0;
+
+            daysInputs.forEach(input => {
+                totalDays += parseInt(input.value) || 0;
+            });
+
+            if (totalDays > 0) {
+                const finishDate = new Date(workDate);
+                finishDate.setDate(finishDate.getDate() + totalDays);
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('finishDateDisplay').innerText = 
+                    `Estimated Finish Date: ${finishDate.toLocaleDateString(undefined, options)}`;
+            } else {
+                document.getElementById('finishDateDisplay').innerText = '';
+            }
+        }
+    </script>
+</body>
+</html>
